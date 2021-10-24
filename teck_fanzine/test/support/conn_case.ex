@@ -36,4 +36,30 @@ defmodule TeckFanzineWeb.ConnCase do
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Setup helper that registers and logs in accounts_users.
+
+      setup :register_and_log_in_accounts_user
+
+  It stores an updated connection and a registered accounts_user in the
+  test context.
+  """
+  def register_and_log_in_accounts_user(%{conn: conn}) do
+    accounts_user = TeckFanzine.AccountsFixtures.accounts_user_fixture()
+    %{conn: log_in_accounts_user(conn, accounts_user), accounts_user: accounts_user}
+  end
+
+  @doc """
+  Logs the given `accounts_user` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_accounts_user(conn, accounts_user) do
+    token = TeckFanzine.Accounts.generate_accounts_user_session_token(accounts_user)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:accounts_user_token, token)
+  end
 end

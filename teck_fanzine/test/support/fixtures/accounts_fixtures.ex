@@ -19,4 +19,29 @@ defmodule TeckFanzine.AccountsFixtures do
 
     user
   end
+
+  def unique_accounts_user_email, do: "accounts_user#{System.unique_integer()}@example.com"
+  def valid_accounts_user_password, do: "hello world!"
+
+  def valid_accounts_user_attributes(attrs \\ %{}) do
+    Enum.into(attrs, %{
+      email: unique_accounts_user_email(),
+      password: valid_accounts_user_password()
+    })
+  end
+
+  def accounts_user_fixture(attrs \\ %{}) do
+    {:ok, accounts_user} =
+      attrs
+      |> valid_accounts_user_attributes()
+      |> TeckFanzine.Accounts.register_accounts_user()
+
+    accounts_user
+  end
+
+  def extract_accounts_user_token(fun) do
+    {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
+    [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
+    token
+  end
 end

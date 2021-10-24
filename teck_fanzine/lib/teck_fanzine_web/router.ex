@@ -1,6 +1,8 @@
 defmodule TeckFanzineWeb.Router do
   use TeckFanzineWeb, :router
 
+  import TeckFanzineWeb.AccountsUserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,6 +10,7 @@ defmodule TeckFanzineWeb.Router do
     plug :put_root_layout, {TeckFanzineWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_accounts_user
   end
 
   pipeline :api do
@@ -60,5 +63,38 @@ defmodule TeckFanzineWeb.Router do
 
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+  end
+
+  ## Authentication routes
+
+  scope "/", TeckFanzineWeb do
+    pipe_through [:browser, :redirect_if_accounts_user_is_authenticated]
+
+    get "/accounts_users/register", AccountsUserRegistrationController, :new
+    post "/accounts_users/register", AccountsUserRegistrationController, :create
+    get "/accounts_users/log_in", AccountsUserSessionController, :new
+    post "/accounts_users/log_in", AccountsUserSessionController, :create
+    get "/accounts_users/reset_password", AccountsUserResetPasswordController, :new
+    post "/accounts_users/reset_password", AccountsUserResetPasswordController, :create
+    get "/accounts_users/reset_password/:token", AccountsUserResetPasswordController, :edit
+    put "/accounts_users/reset_password/:token", AccountsUserResetPasswordController, :update
+  end
+
+  scope "/", TeckFanzineWeb do
+    pipe_through [:browser, :require_authenticated_accounts_user]
+
+    get "/accounts_users/settings", AccountsUserSettingsController, :edit
+    put "/accounts_users/settings", AccountsUserSettingsController, :update
+    get "/accounts_users/settings/confirm_email/:token", AccountsUserSettingsController, :confirm_email
+  end
+
+  scope "/", TeckFanzineWeb do
+    pipe_through [:browser]
+
+    delete "/accounts_users/log_out", AccountsUserSessionController, :delete
+    get "/accounts_users/confirm", AccountsUserConfirmationController, :new
+    post "/accounts_users/confirm", AccountsUserConfirmationController, :create
+    get "/accounts_users/confirm/:token", AccountsUserConfirmationController, :edit
+    post "/accounts_users/confirm/:token", AccountsUserConfirmationController, :update
   end
 end
